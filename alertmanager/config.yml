@@ -1,0 +1,57 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'alertmanager@example.com'
+  smtp_auth_username: 'alertmanager'
+  smtp_auth_password: 'changeme'
+
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: 'team-email'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'ops-pager'
+    - match:
+        severity: warning
+      receiver: 'team-email'
+
+receivers:
+  - name: 'ops-pager'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/REPLACE/WITH/YOUR/WEBHOOK'
+        channel: '#alerts'
+
+  - name: 'team-email'
+    email_configs:
+      - to: 'team@example.com'
+        send_resolved: true
+
+  - name: 'msteams-webhook'
+    webhook_configs:
+      - url: 'https://outlook.office.com/webhook/REPLACE/WEBHOOK/URL'
+        http_config:
+          # if your webhook requires a bearer token, place it here (do NOT commit real tokens)
+          # bearer_token: 'REPLACE_WITH_TOKEN'
+
+  - name: 'debug'
+    webhook_configs:
+      - url: 'http://localhost:9093/'
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Example silence file (this is not used automatically by Alertmanager but is provided as a template)
+# To create a silence, use the Alertmanager UI or API. Example YAML for a silence:
+#
+#  matchers:
+#    - name: alertname
+#      value: AppDown
+#      isRegex: false
+#  startsAt: '2025-08-17T00:00:00Z'
+#  endsAt: '2025-08-17T01:00:00Z'
+#  createdBy: 'me'
+#  comment: 'Planned maintenance'

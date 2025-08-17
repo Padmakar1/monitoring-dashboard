@@ -1,0 +1,9 @@
+notifiers:
+  - name: Alertmanager-webhook
+    type: webhook
+    uid: alertmanager_webhook
+    isDefault: false
+    settings:
+      url: http://alertmanager:9093/api/v1/alerts
+      httpMethod: POST
+      contentType: application/json

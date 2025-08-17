@@ -1,0 +1,15 @@
+{
+  "index_patterns": ["app-logs-*"],
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "message": {"type": "text"},
+      "log_level": {"type": "keyword"},
+      "module": {"type": "keyword"},
+      "@timestamp": {"type": "date"},
+      "exception": {"type": "boolean"}
+    }
+  }
+}

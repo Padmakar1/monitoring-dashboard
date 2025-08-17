@@ -1,0 +1,20 @@
+groups:
+  - name: app-alerts
+    rules:
+      - alert: AppDown
+        expr: up{job="app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "App is down"
+          description: "The application target is not up for more than 1 minute."
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(request_latency_seconds_bucket[5m])) by (le)) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency (p95 > 1s)"
+          description: "The p95 request latency is above 1s for 2 minutes."

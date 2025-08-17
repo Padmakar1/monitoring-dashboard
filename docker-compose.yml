@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    depends_on:
+      - alertmanager
+
+  grafana:
+    image: grafana/grafana:9.4.7
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - elasticsearch
+      - alertmanager
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.15
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - monitoring
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.15
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - monitoring
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.15
+    volumes:
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    ports:
+      - "5044:5044" # beats input
+    networks:
+      - monitoring
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.17.15
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - app_logs:/var/log/myapp
+    networks:
+      - monitoring
+    depends_on:
+      - logstash
+
+  app:
+    build: ./app
+    volumes:
+      - app_logs:/var/log/myapp
+    ports:
+      - "8000:8000"
+    networks:
+      - monitoring
+
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    entrypoint: ["/bin/sh","/etc/alertmanager/docker-entrypoint.sh"]
+    volumes:
+      - ./alertmanager/config.tmpl:/etc/alertmanager/config.tmpl:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+      - ./alertmanager/docker-entrypoint.sh:/etc/alertmanager/docker-entrypoint.sh:ro
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring
+    secrets:
+      - slack_webhook
+      - msteams_webhook
+      - smtp_auth_username
+      - smtp_auth_password
+
+volumes:
+  esdata:
+  grafana-storage:
+  app_logs:
+
+networks:
+  monitoring:
+    driver: bridge
+
+secrets:
+  slack_webhook:
+    file: ./alertmanager/secrets/slack_webhook.txt
+  msteams_webhook:
+    file: ./alertmanager/secrets/msteams_webhook.txt
+  smtp_auth_username:
+    file: ./alertmanager/secrets/smtp_auth_username.txt
+  smtp_auth_password:
+    file: ./alertmanager/secrets/smtp_auth_password.txt

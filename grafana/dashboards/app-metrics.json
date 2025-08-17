@@ -1,0 +1,132 @@
+{
+  "annotations": {"list": []},
+  "description": "Extended dashboard for the sample app: requests, rate, latency, health and logs",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "iteration": 1672531200000,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 2,
+      "options": {},
+      "targets": [
+        {"expr": "app_requests_total", "format": "time_series", "legendFormat": "requests", "refId": "A"}
+      ],
+      "title": "Total Requests",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 3,
+      "options": {},
+      "targets": [
+        {"expr": "rate(app_requests_total[1m])", "format": "time_series", "legendFormat": "req/s", "refId": "A"}
+      ],
+      "title": "Requests per Second (1m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 8},
+      "id": 4,
+      "options": {},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum(rate(request_latency_seconds_bucket[5m])) by (le))", "format": "time_series", "legendFormat": "p95", "refId": "A"}
+      ],
+      "title": "Request Latency (p95, 5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 6, "w": 8, "x": 8, "y": 8},
+      "id": 7,
+      "options": {},
+      "targets": [
+        {"expr": "sum(rate(app_errors_total[1m]))", "format": "time_series", "legendFormat": "errors", "refId": "A"}
+      ],
+      "title": "Errors per Minute",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 6, "w": 4, "x": 8, "y": 8},
+      "id": 5,
+      "options": {},
+      "targets": [
+        {"expr": "up{job=\"app\"}", "format": "time_series", "legendFormat": "up", "refId": "A"}
+      ],
+      "title": "App Up",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 14},
+      "id": 8,
+      "options": {},
+      "targets": [
+        {"expr": "sum by (endpoint) (rate(app_requests_by_endpoint_total[1m]))", "format": "time_series", "legendFormat": "{{endpoint}}", "refId": "A"}
+      ],
+      "title": "Requests per Endpoint (1m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 14},
+      "id": 9,
+      "options": {},
+      "targets": [
+        {"expr": "sum(rate(app_errors_total[5m])) by (endpoint)", "format": "time_series", "legendFormat": "{{endpoint}}", "refId": "A"}
+      ],
+      "title": "Error Heatmap (5m rate by endpoint)",
+      "type": "heatmap"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 20},
+      "id": 10,
+      "options": {},
+      "targets": [
+        {"expr": "sum(rate(app_errors_total[1m]))", "format": "time_series", "legendFormat": "errors", "refId": "A"},
+        {"expr": "sum(rate(app_requests_total[1m]))", "format": "time_series", "legendFormat": "requests", "refId": "B"}
+      ],
+      "title": "Log-rate vs Request-rate (1m)",
+      "type": "timeseries"
+    }
+  ,
+    {
+      "datasource": "Elasticsearch",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 6,
+      "options": {},
+      "targets": [
+        {"refId": "A", "query": "app-logs-*"}
+      ],
+      "title": "App Logs",
+      "type": "logs"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 30,
+  "style": "dark",
+  "tags": [],
+  "templating": {"list": []},
+  "time": {"from": "now-15m", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "App Metrics (extended)",
+  "version": 2
+}

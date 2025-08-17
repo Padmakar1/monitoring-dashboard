@@ -1,0 +1,44 @@
+apiVersion: 1
+groups:
+  - name: grafana-alerts
+    interval: 1m
+    rules:
+      - uid: high_req_rate
+        title: High request rate
+        condition: "C > 100"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600000
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: Prometheus
+              expr: "sum(rate(app_requests_total[1m]))"
+              format: time_series
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request rate"
+
+      - uid: app_down
+        title: App down
+        condition: "A == 0"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600000
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: Prometheus
+              expr: "up{job=\"app\"}"
+              format: time_series
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "App target is down"

@@ -1,0 +1,42 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: '{{ env "SMTP_SMARTHOST" "smtp.example.com:587" }}'
+  smtp_from: '{{ env "SMTP_FROM" "alertmanager@example.com" }}'
+  smtp_auth_username: '{{ (file "/run/secrets/smtp_auth_username" | default (env "SMTP_AUTH_USERNAME")) | default "" }}'
+  smtp_auth_password: '{{ (file "/run/secrets/smtp_auth_password" | default (env "SMTP_AUTH_PASSWORD")) | default "" }}'
+
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: 'team-email'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'ops-pager'
+    - match:
+        severity: warning
+      receiver: 'team-email'
+
+receivers:
+  - name: 'ops-pager'
+    slack_configs:
+      - api_url: '{{ (file "/run/secrets/slack_webhook" | default (env "SLACK_WEBHOOK")) | default "https://hooks.slack.com/services/REPLACE/WEBHOOK" }}'
+        channel: '{{ env "SLACK_CHANNEL" "#alerts" }}'
+
+  - name: 'team-email'
+    email_configs:
+      - to: '{{ env "TEAM_EMAIL" "team@example.com" }}'
+        send_resolved: true
+
+  - name: 'msteams-webhook'
+    webhook_configs:
+      - url: '{{ (file "/run/secrets/msteams_webhook" | default (env "MSTEAMS_WEBHOOK")) | default "https://outlook.office.com/webhook/REPLACE/WEBHOOK/URL" }}'
+
+  - name: 'debug'
+    webhook_configs:
+      - url: 'http://localhost:9093/'
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
